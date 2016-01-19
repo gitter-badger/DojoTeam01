@@ -9,7 +9,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../polymer/polymer.html">
-
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-input/iron-input.html">
 <!--
 An element providing a solution to no problem in particular.
 
@@ -30,64 +31,33 @@ Example:
 <dom-module id="my-comp-team01">
   <template>
     <style>
-      :host {
-        display: block;
-        box-sizing: border-box;
-      }
-
-      .author img {
-        display: block;
-        float: left;
-        margin-right: 5px;
-        max-height: 100px;
-        max-width: 100px;
-      }
     </style>
-
-    <h1>&lt;my-comp-team01&gt;</h1>
+    CEP:
+    <input id='cep' is="iron-input" prevent-invalid-input allowed-pattern="[0-9]" maxlength="8">
+    <input type='button' id='getEndereco' on-click="buscaEndereco" value="Buscar Endereco"></input>
+    <input id='cidade' is="iron-input" >
+    <input id='uf' is="iron-input" >
+    <input id='logradouro' is="iron-input" >
+    <input id='ibge' is="iron-input" >
+    <input id='bairro' is="iron-input" >
+    <input type='button' id='getCep' on-click="buscaCep" value="Buscar CEP"></input>
     <content></content>
-    <p class="author">
-      <img src$="{{author.image}}">
-      Cheers,<br/>
-      <span class="name">{{author.name}}</span>
-    </p>
+    <iron-ajax
+      id="ajaxEndereco"
+      handle-as="json"
+      on-response="trataRetornoEndereco"
+      debounce-duration="300"></iron-ajax>
+    <iron-ajax
+      id="ajaxCEP"
+      handle-as="json"
+      on-response="trataRetornoCEP"
+      debounce-duration="300"></iron-ajax>
   </template>
 
   <script>
     Polymer({
       is: 'my-comp-team01',
-
       properties: {
-        /**
-         * `fancy` indicates that the element should don a monocle and tophat,
-         * while checking its pocket watch.
-         */
-        fancy: Boolean,
-
-        /**
-         * Describes the author of the element, but is really just an excuse to
-         * show off JSDoc annotations.
-         *
-         * @type {{name: string, image: string}}
-         */
-        author: {
-          type: Object,
-          // Use `value` to provide a default value for a property, by setting it
-          // on your element's prototype.
-          //
-          // If you provide a function, as we do here, Polymer will call that
-          // _per element instance_.
-          //
-          // We do that to ensure that each element gets its own copy of the
-          // value, rather than having it shared across all instances (via the
-          // prototype).
-          value: function() {
-            return {
-              name:  'Dimitri Glazkov',
-              image: 'http://addyosmani.com/blog/wp-content/uploads/2013/04/unicorn.jpg',
-            };
-          }
-        },
       },
 
       // Element Lifecycle
@@ -119,33 +89,43 @@ Example:
 
       // Element Behavior
 
-      /**
-       * Sometimes it's just nice to say hi.
-       *
-       * @param {string} greeting A positive greeting.
-       * @return {string} The full greeting.
-       */
-      sayHello: function(greeting) {
-        var response = greeting || 'Hello World!';
-        return 'my-comp-team01 says, ' + response;
+      buscaEndereco: function() {
+        console.log('buscando cep: ' + this.$.cep.value);
+        this.$.ajaxCEP.url = "https://viacep.com.br/ws/"+this.$.cep.value+"/json";
+        this.$.ajaxCEP.generateRequest();
+      },
+      
+      trataRetornoEndereco: function(data) {
+        console.log('retorno cep: ', data.detail.response);
+        this.$.cidade.value = data.detail.response.localidade;
+        this.$.bairro.value = data.detail.response.bairro;
+        this.$.uf.value = data.detail.response.uf;
+        this.$.logradouro.value = data.detail.response.logradouro;
+        this.$.ibge.value = data.detail.response.ibge;
+        
+        
+        console.log(data);
       },
 
-      /**
-       * The `my-comp-team01-lasers` event is fired whenever `fireLasers` is called.
-       *
-       * @event my-comp-team01-lasers
-       * @detail {{sound: String}}
-       */
+       buscaCep: function() {
+        console.log('buscando cep: ' + this.$.cep.value);
+        //https://viacep.com.br/ws/SP/Campinas/Ricardo%20Benetton/json/
 
-      /**
-       * Attempt to destroy this element's enemies with a beam of light!
-       *
-       * Or, at least, dispatch an event in the vain hope that someone else will
-       * do the zapping.
-       */
-      fireLasers: function() {
-        this.fire('my-comp-team01-lasers', {sound: 'Pew pew!'});
-      }
+        this.$.ajaxCEP.url = "https://viacep.com.br/ws/"+this.$.cep.value+"/json";
+        this.$.ajaxCEP.generateRequest();
+      },
+      
+      trataRetornoCEP: function(data) {
+        console.log('retorno cep: ', data.detail.response);
+        this.$.cidade.value = data.detail.response.localidade;
+        this.$.bairro.value = data.detail.response.bairro;
+        this.$.uf.value = data.detail.response.uf;
+        this.$.logradouro.value = data.detail.response.logradouro;
+        this.$.ibge.value = data.detail.response.ibge;
+        
+        
+        console.log(data);
+      },
     });
   </script>
 </dom-module>

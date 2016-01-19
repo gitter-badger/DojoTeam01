@@ -18,30 +18,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </head>
   <body unresolved>
 
-    <p>An example of <code>&lt;my-comp-team01&gt;</code>:</p>
+    <p>Componente para busca de CEP. Informe o CEP com ou sem hífen.</p>
 
-    <p>Make words! <button id="saybtn">Say Something</button></p>
-    <p>Make lasers! <button id="laserbtn">Fire lasers</button></p>
-
-    <my-comp-team01 author='{"name": "Lord Meowser", "image": "http://lorempixel.com/g/300/200/cats/"}' fancy>
-      <h2>Hello my-comp-team01</h2>
+    <my-comp-team01>
+      <h2></h2>
     </my-comp-team01>
 
     <script>
-      var seedElement = document.querySelector('my-comp-team01');
-
-      document.querySelector('#saybtn').addEventListener('click', function() {
-        alert(seedElement.sayHello('Hallo!'));
-      });
-
-      document.querySelector('#laserbtn').addEventListener('click', function() {
-        seedElement.fireLasers();
-      });
-
-      document.addEventListener("my-comp-team01-lasers", function(e) {
-        console.log(e.detail.sound);
-      });
-
     </script>
 
   </body>
