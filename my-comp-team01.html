@@ -1,16 +1,10 @@
-<!--
-@license
-Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
--->
-
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 <link rel="import" href="../iron-input/iron-input.html">
+<link rel="import" href="../google-map/google-map.html">
+<link rel="import" href="../google-map/google-map-search.html">
+<link rel="import" href="../google-map/google-map-marker.html">
+
 <!--
 An element providing a solution to no problem in particular.
 
@@ -31,6 +25,9 @@ Example:
 <dom-module id="my-comp-team01">
   <template>
     <style>
+      google-map {
+        height: 600px;
+      }
     </style>
     CEP:
     <input id='cep' is="iron-input" prevent-invalid-input allowed-pattern="[0-9]" maxlength="8">
@@ -41,6 +38,7 @@ Example:
     <input id='ibge' is="iron-input" >
     <input id='bairro' is="iron-input" >
     <input type='button' id='getCep' on-click="buscaCep" value="Buscar CEP"></input>
+    <input type='button' id='searchMap' on-click="buscaNoMapa" value="Buscar Endereco no Maps"></input>
     <content></content>
     <iron-ajax
       id="ajaxEndereco"
@@ -52,12 +50,50 @@ Example:
       handle-as="json"
       on-response="trataRetornoCEP"
       debounce-duration="300"></iron-ajax>
+    <google-map-search id="mapSearch" global-search map="[[map]]" query="{{query}}" results="{{results}}">
+    </google-map-search>
+    <google-map
+        id="gMap"
+        map="{{map}}"
+        api-key="AIzaSyDXdl1m0zwprml5nHerum9wXVP1xIY0hHk" 
+        latitude="0"
+        longitude="0">
+        <template is="dom-repeat" items="[[markerResults]]" as="marker">
+          <google-map-marker latitude="{{marker.latitude}}"
+                            longitude="{{marker.longitude}}">
+            <h2>{{marker.name}}</h2>
+            <span>{{marker.formatted_address}}</span>
+          </google-map-marker>
+        </template>
+    </google-map>
+    
+      
   </template>
 
   <script>
     Polymer({
       is: 'my-comp-team01',
       properties: {
+
+        query: {
+          type: String
+        },
+        results: {
+          type: Object,
+          observer: '_resultsChanged',
+          notify: true
+        }
+        
+      },
+      
+      _resultsChanged: function(newValue) {
+        this.$.gMap.clear();
+        if (newValue && newValue.length) {
+          console.log(newValue);
+          this.$.gMap.latitude = newValue[0].geometry.location.lat();
+          this.$.gMap.longitude = newValue[0].geometry.location.lng();
+        }
+        this.markerResults = newValue;
       },
 
       // Element Lifecycle
@@ -91,8 +127,8 @@ Example:
 
       buscaEndereco: function() {
         console.log('buscando cep: ' + this.$.cep.value);
-        this.$.ajaxCEP.url = "https://viacep.com.br/ws/"+this.$.cep.value+"/json";
-        this.$.ajaxCEP.generateRequest();
+        this.$.ajaxEndereco.url = "https://viacep.com.br/ws/"+this.$.cep.value+"/json";
+        this.$.ajaxEndereco.generateRequest();
       },
       
       trataRetornoEndereco: function(data) {
@@ -103,29 +139,34 @@ Example:
         this.$.logradouro.value = data.detail.response.logradouro;
         this.$.ibge.value = data.detail.response.ibge;
         
+        this.query = this.$.logradouro.value + ", " + this.$.cidade.value + " - " + this.$.uf.value;
         
         console.log(data);
       },
 
-       buscaCep: function() {
+      buscaCep: function() {
         console.log('buscando cep: ' + this.$.cep.value);
         //https://viacep.com.br/ws/SP/Campinas/Ricardo%20Benetton/json/
-
-        this.$.ajaxCEP.url = "https://viacep.com.br/ws/"+this.$.cep.value+"/json";
+        var uf = this.$.uf.value;
+        var cidade = this.$.cidade.value;
+        var rua = this.$.logradouro.value;
+        this.$.ajaxCEP.url = "https://viacep.com.br/ws/"+uf+ "/"+cidade+ "/"+"/"+rua+"/json";
         this.$.ajaxCEP.generateRequest();
       },
       
       trataRetornoCEP: function(data) {
         console.log('retorno cep: ', data.detail.response);
-        this.$.cidade.value = data.detail.response.localidade;
-        this.$.bairro.value = data.detail.response.bairro;
-        this.$.uf.value = data.detail.response.uf;
-        this.$.logradouro.value = data.detail.response.logradouro;
-        this.$.ibge.value = data.detail.response.ibge;
+        this.$.cep.value = data.detail.response[0].cep;
         
+        this.query = this.$.cep.value + " brasil";
         
         console.log(data);
       },
+      
+      buscaNoMapa: function() {
+        this.$.mapSearch.search();
+      },
+      
     });
   </script>
 </dom-module>
