@@ -2,7 +2,7 @@
 
 An element providing a starting point for your own reusable Polymer elements.
 
-[DEMO](http://webpolymerlabs.github.io/DojoTeam01/components/my-comp-team01/demo/index.html)
+[DEMO](http://webpolymerlabs.github.io/DojoTeam01/components/my-comp-team01/demo/index-user-reqs.html)
 
 ## Dependencies
 
