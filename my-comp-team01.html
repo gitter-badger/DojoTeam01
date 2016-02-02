@@ -28,7 +28,11 @@ Example:
       google-map {
         height: 600px;
       }
+      .nomap{
+        visibility: hidden;
+      }
     </style>
+    <!--
     CEP:
     <input id='cep' is="iron-input" prevent-invalid-input allowed-pattern="[0-9]" maxlength="8">
     <input type='button' id='getEndereco' on-click="buscaEndereco" value="Buscar Endereco"></input>
@@ -40,6 +44,7 @@ Example:
     <input type='button' id='getCep' on-click="buscaCep" value="Buscar CEP"></input>
     <input type='button' id='searchMap' on-click="buscaNoMapa" value="Buscar Endereco no Maps"></input>
     <content></content>
+    -->
     <iron-ajax
       id="ajaxEndereco"
       handle-as="json"
@@ -58,6 +63,9 @@ Example:
         api-key="AIzaSyDXdl1m0zwprml5nHerum9wXVP1xIY0hHk" 
         latitude="0"
         longitude="0">
+      <!--  hidden="[[!_shouldDisplayMaps(noMaps, addressResult)]]"-->
+        
+       
         <template is="dom-repeat" items="[[markerResults]]" as="marker">
           <google-map-marker latitude="{{marker.latitude}}"
                             longitude="{{marker.longitude}}">
@@ -82,9 +90,30 @@ Example:
           type: Object,
           observer: '_resultsChanged',
           notify: true
+        },
+        zipCode: {
+          type: String,
+          observer: 'buscaEndereco'
+        },
+        addressResult: {
+          type: Object,
+          notify: true,
+          value: null
+        },
+        noMaps: {
+          type: Boolean,
+          value: false
+        },
+        displayingMap:{
+          type: Boolean,
+          value: false,
+          reflectToAttribute: true
         }
-        
       },
+      
+      observers:[
+       '_shouldDisplayMaps(noMaps, addressResult)'
+      ],
       
       _resultsChanged: function(newValue) {
         this.$.gMap.clear();
@@ -94,6 +123,23 @@ Example:
           this.$.gMap.longitude = newValue[0].geometry.location.lng();
         }
         this.markerResults = newValue;
+      },
+
+      _shouldDisplayMaps: function(noMaps, addressResult) {
+        console.log(noMaps, addressResult);
+        var display;
+        if (!noMaps && addressResult)
+          display= true;
+        else
+          display= false;
+          
+          if(display){
+            this.$.gMap.classList.remove('nomap');
+          }else{
+            this.$.gMap.classList.add('nomap');
+          }
+          
+          this.displayingMap = display;
       },
 
       // Element Lifecycle
@@ -125,23 +171,29 @@ Example:
 
       // Element Behavior
 
-      buscaEndereco: function() {
-        console.log('buscando cep: ' + this.$.cep.value);
-        this.$.ajaxEndereco.url = "https://viacep.com.br/ws/"+this.$.cep.value+"/json";
-        this.$.ajaxEndereco.generateRequest();
+      buscaEndereco: function(newValue) {
+        console.log('buscando cep: ' + newValue);
+        if (newValue && String(newValue).length >= 8) {
+          this.$.ajaxEndereco.url = "https://viacep.com.br/ws/"+newValue+"/json";
+          this.$.ajaxEndereco.generateRequest();
+        } else {
+          this.addressResult = null;
+        }
       },
       
       trataRetornoEndereco: function(data) {
         console.log('retorno cep: ', data.detail.response);
-        this.$.cidade.value = data.detail.response.localidade;
-        this.$.bairro.value = data.detail.response.bairro;
-        this.$.uf.value = data.detail.response.uf;
-        this.$.logradouro.value = data.detail.response.logradouro;
-        this.$.ibge.value = data.detail.response.ibge;
+        // this.$.cidade.value = data.detail.response.localidade;
+        // this.$.bairro.value = data.detail.response.bairro;
+        // this.$.uf.value = data.detail.response.uf;
+        // this.$.logradouro.value = data.detail.response.logradouro;
+        // this.$.ibge.value = data.detail.response.ibge;
         
-        this.query = this.$.logradouro.value + ", " + this.$.cidade.value + " - " + this.$.uf.value;
+        this.query = data.detail.response.logradouro + ", " + data.detail.response.localidade + " - " + data.detail.response.uf;
         
-        console.log(data);
+        this.addressResult = data.detail.response;
+        
+        console.log(this.addressResult);
       },
 
       buscaCep: function() {
