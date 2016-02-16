@@ -1,9 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
-<link rel="import" href="../iron-input/iron-input.html">
-<link rel="import" href="../google-map/google-map.html">
-<link rel="import" href="../google-map/google-map-search.html">
-<link rel="import" href="../google-map/google-map-marker.html">
+<link rel="import" href="my-comp-team01-behavior.html">
 
 <!--
 An element providing a solution to no problem in particular.
@@ -25,121 +22,22 @@ Example:
 <dom-module id="my-comp-team01">
   <template>
     <style>
-      google-map {
-        height: 600px;
-      }
-      .nomap{
-        visibility: hidden;
-      }
     </style>
-    <!--
-    CEP:
-    <input id='cep' is="iron-input" prevent-invalid-input allowed-pattern="[0-9]" maxlength="8">
-    <input type='button' id='getEndereco' on-click="buscaEndereco" value="Buscar Endereco"></input>
-    <input id='cidade' is="iron-input" >
-    <input id='uf' is="iron-input" >
-    <input id='logradouro' is="iron-input" >
-    <input id='ibge' is="iron-input" >
-    <input id='bairro' is="iron-input" >
-    <input type='button' id='getCep' on-click="buscaCep" value="Buscar CEP"></input>
-    <input type='button' id='searchMap' on-click="buscaNoMapa" value="Buscar Endereco no Maps"></input>
-    <content></content>
-    -->
     <iron-ajax
-      id="ajaxEndereco"
       handle-as="json"
-      on-response="trataRetornoEndereco"
+      on-response="_trataRetornoEndereco"
       debounce-duration="300"></iron-ajax>
-    <iron-ajax
-      id="ajaxCEP"
-      handle-as="json"
-      on-response="trataRetornoCEP"
-      debounce-duration="300"></iron-ajax>
-    <google-map-search id="mapSearch" global-search map="[[map]]" query="{{query}}" results="{{results}}">
-    </google-map-search>
-    <google-map
-        id="gMap"
-        map="{{map}}"
-        api-key="AIzaSyDXdl1m0zwprml5nHerum9wXVP1xIY0hHk" 
-        latitude="0"
-        longitude="0">
-      <!--  hidden="[[!_shouldDisplayMaps(noMaps, addressResult)]]"-->
-        
-       
-        <template is="dom-repeat" items="[[markerResults]]" as="marker">
-          <google-map-marker latitude="{{marker.latitude}}"
-                            longitude="{{marker.longitude}}">
-            <h2>{{marker.name}}</h2>
-            <span>{{marker.formatted_address}}</span>
-          </google-map-marker>
-        </template>
-    </google-map>
-    
-      
   </template>
 
   <script>
     Polymer({
       is: 'my-comp-team01',
-      properties: {
-
-        query: {
-          type: String
-        },
-        results: {
-          type: Object,
-          observer: '_resultsChanged',
-          notify: true
-        },
-        zipCode: {
-          type: String,
-          observer: 'buscaEndereco'
-        },
-        addressResult: {
-          type: Object,
-          notify: true,
-          value: null
-        },
-        noMaps: {
-          type: Boolean,
-          value: false
-        },
-        displayingMap:{
-          type: Boolean,
-          value: false,
-          reflectToAttribute: true
-        }
-      },
-      
-      observers:[
-       '_shouldDisplayMaps(noMaps, addressResult)'
+      behaviors: [
+        PolymerLab01.ZipCodeBehavior
       ],
-      
-      _resultsChanged: function(newValue) {
-        this.$.gMap.clear();
-        if (newValue && newValue.length) {
-          console.log(newValue);
-          this.$.gMap.latitude = newValue[0].geometry.location.lat();
-          this.$.gMap.longitude = newValue[0].geometry.location.lng();
-        }
-        this.markerResults = newValue;
-      },
 
-      _shouldDisplayMaps: function(noMaps, addressResult) {
-        console.log(noMaps, addressResult);
-        var display;
-        if (!noMaps && addressResult)
-          display= true;
-        else
-          display= false;
-          
-          if(display){
-            this.$.gMap.classList.remove('nomap');
-          }else{
-            this.$.gMap.classList.add('nomap');
-          }
-          
-          this.displayingMap = display;
+      get _ironAjaxElement () {
+        return this.$$('iron-ajax');
       },
 
       // Element Lifecycle
@@ -171,53 +69,7 @@ Example:
 
       // Element Behavior
 
-      buscaEndereco: function(newValue) {
-        console.log('buscando cep: ' + newValue);
-        if (newValue && String(newValue).length >= 8) {
-          this.$.ajaxEndereco.url = "https://viacep.com.br/ws/"+newValue+"/json";
-          this.$.ajaxEndereco.generateRequest();
-        } else {
-          this.addressResult = null;
-        }
-      },
-      
-      trataRetornoEndereco: function(data) {
-        console.log('retorno cep: ', data.detail.response);
-        // this.$.cidade.value = data.detail.response.localidade;
-        // this.$.bairro.value = data.detail.response.bairro;
-        // this.$.uf.value = data.detail.response.uf;
-        // this.$.logradouro.value = data.detail.response.logradouro;
-        // this.$.ibge.value = data.detail.response.ibge;
-        
-        this.query = data.detail.response.logradouro + ", " + data.detail.response.localidade + " - " + data.detail.response.uf;
-        
-        this.addressResult = data.detail.response;
-        
-        console.log(this.addressResult);
-      },
 
-      buscaCep: function() {
-        console.log('buscando cep: ' + this.$.cep.value);
-        //https://viacep.com.br/ws/SP/Campinas/Ricardo%20Benetton/json/
-        var uf = this.$.uf.value;
-        var cidade = this.$.cidade.value;
-        var rua = this.$.logradouro.value;
-        this.$.ajaxCEP.url = "https://viacep.com.br/ws/"+uf+ "/"+cidade+ "/"+"/"+rua+"/json";
-        this.$.ajaxCEP.generateRequest();
-      },
-      
-      trataRetornoCEP: function(data) {
-        console.log('retorno cep: ', data.detail.response);
-        this.$.cep.value = data.detail.response[0].cep;
-        
-        this.query = this.$.cep.value + " brasil";
-        
-        console.log(data);
-      },
-      
-      buscaNoMapa: function() {
-        this.$.mapSearch.search();
-      },
       
     });
   </script>
